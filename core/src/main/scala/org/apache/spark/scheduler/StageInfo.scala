@@ -40,8 +40,8 @@ class StageInfo(
     private[spark] val taskLocalityPreferences: Seq[Seq[TaskLocation]] = Seq.empty,
     private[spark] val shuffleDepId: Option[Int] = None,
     val resourceProfileId: Int,
-    private[spark] var isPushBasedShuffleEnabled: Boolean = false,
-    private[spark] var shuffleMergerCount: Int = 0) {
+    var isPushBasedShuffleEnabled: Boolean = false,
+    var shuffleMergerCount: Int = 0) {
   /** When this stage was submitted from the DAGScheduler to a TaskScheduler. */
   var submissionTime: Option[Long] = None
   /** Time when the stage completed or when the stage was cancelled. */

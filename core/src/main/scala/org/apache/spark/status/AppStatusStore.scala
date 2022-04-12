@@ -322,11 +322,26 @@ private[spark] class AppStatusStore(
           toValues(_.shuffleFetchWaitTime),
           toValues(_.shuffleRemoteBytesRead),
           toValues(_.shuffleRemoteBytesReadToDisk),
-          toValues(_.shuffleTotalBlocksFetched)),
+          toValues(_.shuffleTotalBlocksFetched),
+          toValues(_.pushBasedShuffleRemoteReqsDuration),
+          new v1.ShufflePushReadMetricDistributions(
+            toValues(_.pushBasedShuffleCorruptMergedBlockChunks),
+            toValues(_.pushBasedShuffleFallbackCount),
+            toValues(_.pushBasedShuffleMergedRemoteBlocksFetched),
+            toValues(_.pushBasedShuffleMergedLocalBlocksFetched),
+            toValues(_.pushBasedShuffleMergedRemoteChunksFetched),
+            toValues(_.pushBasedShuffleMergedLocalChunksFetched),
+            toValues(_.pushBasedShuffleMergedRemoteBlocksBytesRead),
+            toValues(_.pushBasedShuffleMergedLocalBlocksBytesRead),
+            toValues(_.pushBasedShuffleMergedRemoteReqsDuration))),
         shuffleWriteMetrics = new v1.ShuffleWriteMetricDistributions(
           toValues(_.shuffleWriteBytes),
           toValues(_.shuffleWriteRecords),
-          toValues(_.shuffleWriteTime)))
+          toValues(_.shuffleWriteTime),
+          new v1.ShufflePushWriteMetricDistributions(
+            toValues(_.pushBasedShuffleBlocksNotPushed),
+            toValues(_.pushBasedShuffleBlocksCollided),
+            toValues(_.pushBasedShuffleBlocksTooLate))))
 
       return Some(distributions)
     }
@@ -408,11 +423,52 @@ private[spark] class AppStatusStore(
         },
         scanTasks(TaskIndexNames.SHUFFLE_TOTAL_BLOCKS) { m =>
           m.shuffleLocalBlocksFetched + m.shuffleRemoteBlocksFetched
-        }),
-      shuffleWriteMetrics = new v1.ShuffleWriteMetricDistributions(
+        },
+        scanTasks(TaskIndexNames.PUSH_BASED_SHUFFLE_REMOTE_REQS_DURATION) {
+          t => t.shuffleRemoteReqsDuration
+        },
+        new v1.ShufflePushReadMetricDistributions(
+          scanTasks(TaskIndexNames.PUSH_BASED_SHUFFLE_CORRUPT_MERGED_BLOCK_CHUNKS) { t =>
+            t.shuffleCorruptMergedBlockChunks
+          },
+          scanTasks(TaskIndexNames.PUSH_BASED_SHUFFLE_FALLBACK_COUNT) {
+            t => t.shuffleFallbackCount
+          },
+          scanTasks(TaskIndexNames.PUSH_BASED_SHUFFLE_MERGED_REMOTE_BLOCKS) { t =>
+            t.shuffleMergedRemoteBlocksFetched
+          },
+          scanTasks(TaskIndexNames.PUSH_BASED_SHUFFLE_MERGED_LOCAL_BLOCKS) { t =>
+            t.shuffleMergedLocalBlocksFetched
+          },
+          scanTasks(TaskIndexNames.PUSH_BASED_SHUFFLE_MERGED_REMOTE_CHUNKS) { t =>
+            t.shuffleMergedRemoteChunksFetched
+          },
+          scanTasks(TaskIndexNames.PUSH_BASED_SHUFFLE_MERGED_LOCAL_CHUNKS) { t =>
+            t.shuffleMergedLocalChunksFetched
+          },
+          scanTasks(TaskIndexNames.PUSH_BASED_SHUFFLE_MERGED_REMOTE_READS) { t =>
+            t.shuffleMergedRemoteBlocksBytesRead
+          },
+          scanTasks(TaskIndexNames.PUSH_BASED_SHUFFLE_MERGED_LOCAL_READS) { t =>
+            t.shuffleMergedLocalBlocksBytesRead
+          },
+          scanTasks(TaskIndexNames.PUSH_BASED_SHUFFLE_MERGED_REMOTE_REQS_DURATION) { t =>
+            t.shuffleMergedRemoteReqDuration
+          })),
+        shuffleWriteMetrics = new v1.ShuffleWriteMetricDistributions(
         scanTasks(TaskIndexNames.SHUFFLE_WRITE_SIZE) { t => t.shuffleBytesWritten },
         scanTasks(TaskIndexNames.SHUFFLE_WRITE_RECORDS) { t => t.shuffleRecordsWritten },
-        scanTasks(TaskIndexNames.SHUFFLE_WRITE_TIME) { t => t.shuffleWriteTime }))
+        scanTasks(TaskIndexNames.SHUFFLE_WRITE_TIME) { t => t.shuffleWriteTime },
+        new v1.ShufflePushWriteMetricDistributions(
+          scanTasks(TaskIndexNames.PUSH_BASED_SHUFFLE_BLOCKS_NOT_PUSHED) {
+            t => t.shuffleBlocksNotPushed
+          },
+          scanTasks(TaskIndexNames.PUSH_BASED_SHUFFLE_BLOCKS_COLLIDED) {
+            t => t.shuffleBlocksCollided
+          },
+          scanTasks(TaskIndexNames.PUSH_BASED_SHUFFLE_BLOCKS_TOO_LATE) {
+            t => t.shuffleBlocksTooLate
+          })))
 
     // Go through the computed quantiles and cache the values that match the caching criteria.
     computedQuantiles.quantiles.zipWithIndex
@@ -449,10 +505,36 @@ private[spark] class AppStatusStore(
           shuffleRemoteBytesReadToDisk =
             computedQuantiles.shuffleReadMetrics.remoteBytesReadToDisk(idx),
           shuffleTotalBlocksFetched = computedQuantiles.shuffleReadMetrics.totalBlocksFetched(idx),
+          pushBasedShuffleCorruptMergedBlockChunks =
+            computedQuantiles.shuffleReadMetrics.pushBased.corruptMergedBlockChunks(idx),
+          pushBasedShuffleFallbackCount =
+            computedQuantiles.shuffleReadMetrics.pushBased.fallbackCount(idx),
+          pushBasedShuffleMergedRemoteBlocksFetched =
+            computedQuantiles.shuffleReadMetrics.pushBased.remoteMergedBlocksFetched(idx),
+          pushBasedShuffleMergedLocalBlocksFetched =
+            computedQuantiles.shuffleReadMetrics.pushBased.localMergedBlocksFetched(idx),
+          pushBasedShuffleMergedRemoteChunksFetched =
+            computedQuantiles.shuffleReadMetrics.pushBased.remoteMergedChunksFetched(idx),
+          pushBasedShuffleMergedLocalChunksFetched =
+            computedQuantiles.shuffleReadMetrics.pushBased.localMergedChunksFetched(idx),
+          pushBasedShuffleMergedRemoteBlocksBytesRead =
+            computedQuantiles.shuffleReadMetrics.pushBased.remoteMergedBlocksBytesRead(idx),
+          pushBasedShuffleMergedLocalBlocksBytesRead =
+            computedQuantiles.shuffleReadMetrics.pushBased.localMergedBlocksBytesRead(idx),
+          pushBasedShuffleRemoteReqsDuration =
+            computedQuantiles.shuffleReadMetrics.remoteReqsDuration(idx),
+          pushBasedShuffleMergedRemoteReqsDuration =
+            computedQuantiles.shuffleReadMetrics.pushBased.remoteMergedReqsDuration(idx),
 
           shuffleWriteBytes = computedQuantiles.shuffleWriteMetrics.writeBytes(idx),
           shuffleWriteRecords = computedQuantiles.shuffleWriteMetrics.writeRecords(idx),
-          shuffleWriteTime = computedQuantiles.shuffleWriteMetrics.writeTime(idx))
+          shuffleWriteTime = computedQuantiles.shuffleWriteMetrics.writeTime(idx),
+          pushBasedShuffleBlocksNotPushed =
+            computedQuantiles.shuffleWriteMetrics.pushBased.blocksNotPushed(idx),
+          pushBasedShuffleBlocksCollided =
+            computedQuantiles.shuffleWriteMetrics.pushBased.blocksCollided(idx),
+          pushBasedShuffleBlocksTooLate =
+            computedQuantiles.shuffleWriteMetrics.pushBased.blocksNotPushed(idx))
         store.write(cached)
       }
 
@@ -631,9 +713,22 @@ private[spark] class AppStatusStore(
         shuffleLocalBytesRead = stage.shuffleLocalBytesRead,
         shuffleReadBytes = stage.shuffleReadBytes,
         shuffleReadRecords = stage.shuffleReadRecords,
+        pushBasedShuffleCorruptMergedBlockChunks = stage.pushBasedShuffleCorruptMergedBlockChunks,
+        pushBasedShuffleFallbackCount = stage.pushBasedShuffleFallbackCount,
+        pushBasedShuffleMergedRemoteBlocksFetched = stage.pushBasedShuffleMergedRemoteBlocksFetched,
+        pushBasedShuffleMergedLocalBlocksFetched = stage.pushBasedShuffleMergedLocalBlocksFetched,
+        pushBasedShuffleMergedRemoteChunksFetched = stage.pushBasedShuffleMergedRemoteChunksFetched,
+        pushBasedShuffleMergedLocalChunksFetched = stage.pushBasedShuffleMergedLocalChunksFetched,
+        pushBasedShuffleMergedRemoteBytesRead = stage.pushBasedShuffleMergedRemoteBytesRead,
+        pushBasedShuffleMergedLocalBytesRead = stage.pushBasedShuffleMergedLocalBytesRead,
+        pushBasedShuffleRemoteReqsDuration = stage.pushBasedShuffleRemoteReqsDuration,
+        pushBasedShuffleMergedRemoteReqsDuration = stage.pushBasedShuffleMergedRemoteReqsDuration,
         shuffleWriteBytes = stage.shuffleWriteBytes,
         shuffleWriteTime = stage.shuffleWriteTime,
         shuffleWriteRecords = stage.shuffleWriteRecords,
+        pushBasedShuffleBlocksNotPushed = stage.pushBasedShuffleBlocksNotPushed,
+        pushBasedShuffleBlocksCollided = stage.pushBasedShuffleBlocksCollided,
+        pushBasedShuffleBlocksTooLate = stage.pushBasedShuffleBlocksTooLate,
         name = stage.name,
         description = stage.description,
         details = stage.details,
@@ -647,7 +742,9 @@ private[spark] class AppStatusStore(
         resourceProfileId = stage.resourceProfileId,
         peakExecutorMetrics = stage.peakExecutorMetrics,
         taskMetricsDistributions = taskMetricsDistribution,
-        executorMetricsDistributions = executorMetricsDistributions)
+        executorMetricsDistributions = executorMetricsDistributions,
+        isPushBasedShuffleEnabled = stage.isPushBasedShuffleEnabled,
+        shuffleMergersCount = stage.shuffleMergersCount)
     }
   }
 

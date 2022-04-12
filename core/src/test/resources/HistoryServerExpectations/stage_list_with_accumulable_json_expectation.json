@@ -33,9 +33,22 @@
   "shuffleLocalBytesRead" : 0,
   "shuffleReadBytes" : 0,
   "shuffleReadRecords" : 0,
+  "pushBasedShuffleCorruptMergedBlockChunks" : 0,
+  "pushBasedShuffleFallbackCount" : 0,
+  "pushBasedShuffleMergedRemoteBlocksFetched": 0,
+  "pushBasedShuffleMergedLocalBlocksFetched": 0,
+  "pushBasedShuffleMergedRemoteChunksFetched": 0,
+  "pushBasedShuffleMergedLocalChunksFetched": 0,
+  "pushBasedShuffleMergedRemoteBytesRead": 0,
+  "pushBasedShuffleMergedLocalBytesRead": 0,
+  "pushBasedShuffleRemoteReqsDuration" : 0,
+  "pushBasedShuffleMergedRemoteReqsDuration" : 0,
   "shuffleWriteBytes" : 0,
   "shuffleWriteTime" : 0,
   "shuffleWriteRecords" : 0,
+  "pushBasedShuffleBlocksNotPushed" : 0,
+  "pushBasedShuffleBlocksCollided" : 0,
+  "pushBasedShuffleBlocksTooLate" : 0,
   "name" : "foreach at <console>:15",
   "details" : "org.apache.spark.rdd.RDD.foreach(RDD.scala:765)\n$line9.$read$$iwC$$iwC$$iwC$$iwC.<init>(<console>:15)\n$line9.$read$$iwC$$iwC$$iwC.<init>(<console>:20)\n$line9.$read$$iwC$$iwC.<init>(<console>:22)\n$line9.$read$$iwC.<init>(<console>:24)\n$line9.$read.<init>(<console>:26)\n$line9.$read$.<init>(<console>:30)\n$line9.$read$.<clinit>(<console>)\n$line9.$eval$.<init>(<console>:7)\n$line9.$eval$.<clinit>(<console>)\n$line9.$eval.$print(<console>)\nsun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\nsun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\nsun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\njava.lang.reflect.Method.invoke(Method.java:483)\norg.apache.spark.repl.SparkIMain$ReadEvalPrint.call(SparkIMain.scala:852)\norg.apache.spark.repl.SparkIMain$Request.loadAndRun(SparkIMain.scala:1125)\norg.apache.spark.repl.SparkIMain.loadAndRunReq$1(SparkIMain.scala:674)\norg.apache.spark.repl.SparkIMain.interpret(SparkIMain.scala:705)\norg.apache.spark.repl.SparkIMain.interpret(SparkIMain.scala:669)",
   "schedulingPool" : "default",
@@ -69,5 +82,7 @@
     "MajorGCCount" : 0,
     "MajorGCTime" : 0,
     "TotalGCTime" : 0
-  }
+  },
+  "isPushBasedShuffleEnabled" : false,
+  "shuffleMergersCount" : 0
 } ]

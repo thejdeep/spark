@@ -77,7 +77,13 @@ object MimaExcludes {
 
     // [SPARK-38908][SQL] Provide query context in runtime error of Casting from String to
     // Number/Date/Timestamp/Boolean
-    ProblemFilters.exclude[DirectMissingMethodProblem]("org.apache.spark.sql.types.Decimal.fromStringANSI")
+    ProblemFilters.exclude[DirectMissingMethodProblem]("org.apache.spark.sql.types.Decimal.fromStringANSI"),
+
+    // [SPARK-36620] [SHUFFLE] Expose push based shuffle metrics
+    ProblemFilters.exclude[DirectMissingMethodProblem]("org.apache.spark.status.api.v1.ShuffleReadMetricDistributions.this"),
+    ProblemFilters.exclude[DirectMissingMethodProblem]("org.apache.spark.status.api.v1.ShuffleReadMetrics.this"),
+    ProblemFilters.exclude[DirectMissingMethodProblem]("org.apache.spark.status.api.v1.ShuffleWriteMetricDistributions.this"),
+    ProblemFilters.exclude[DirectMissingMethodProblem]("org.apache.spark.status.api.v1.ShuffleWriteMetrics.this")
   )
 
   // Exclude rules for 3.2.x from 3.1.1
